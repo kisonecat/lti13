@@ -45,6 +45,7 @@ import           Data.Aeson                         (FromJSON (parseJSON),
                                                      (.=))
 import qualified Data.Aeson                         as A
 import           Data.Aeson.Types                   (Parser)
+import           Data.Aeson.Key                     (fromText)
 import qualified Data.Map.Strict                    as Map
 import           Data.Text                          (Text)
 import qualified Data.Text                          as T
@@ -65,7 +66,7 @@ import           Web.OIDC.Client.Types              (Nonce, SessionStore (..))
 -- | Parses a JSON text field to a fixed expected value, failing otherwise
 parseFixed :: (FromJSON a, Eq a, Show a) => Object -> Text -> a -> Parser a
 parseFixed obj field fixedVal =
-    obj .: field >>= \v ->
+    obj .: (fromText field) >>= \v ->
         if v == fixedVal then
             return v
         else
@@ -237,15 +238,15 @@ instance FromJSON UncheckedLtiTokenClaims where
         UncheckedLtiTokenClaims
             <$> parseFixed v claimMessageType "LtiResourceLinkRequest"
             <*> parseFixed v claimVersion "1.3.0"
-            <*> (v .: claimDeploymentId >>= limitLength 255)
-            <*> v .: claimTargetLinkUri
-            <*> v .: claimRoles
+            <*> (v .: fromText claimDeploymentId >>= limitLength 255)
+            <*> v .: fromText claimTargetLinkUri
+            <*> v .: fromText claimRoles
             <*> v .:? "email"
             <*> v .:? "name"
             <*> v .:? "given_name"
             <*> v .:? "family_name"
-            <*> v .:? claimContext
-            <*> v .:? claimLis
+            <*> v .:? fromText claimContext
+            <*> v .:? fromText claimLis
 
 instance ToJSON UncheckedLtiTokenClaims where
     toJSON UncheckedLtiTokenClaims {
@@ -253,34 +254,34 @@ instance ToJSON UncheckedLtiTokenClaims where
             , targetLinkUri, roles, email, displayName
             , firstName, lastName, context, lis} =
         object [
-              claimMessageType .= messageType
-            , claimVersion .= ltiVersion
-            , claimDeploymentId .= deploymentId
-            , claimTargetLinkUri .= targetLinkUri
-            , claimRoles .= roles
+              fromText claimMessageType .= messageType
+            , fromText claimVersion .= ltiVersion
+            , fromText claimDeploymentId .= deploymentId
+            , fromText claimTargetLinkUri .= targetLinkUri
+            , fromText claimRoles .= roles
             , "email" .= email
             , "name" .= displayName
             , "given_name" .= firstName
             , "family_name" .= lastName
-            , claimContext .= context
-            , claimLis .= lis
+            , fromText claimContext .= context
+            , fromText claimLis .= lis
           ]
     toEncoding UncheckedLtiTokenClaims {
               messageType, ltiVersion, deploymentId
             , targetLinkUri, roles, email, displayName
             , firstName, lastName, context, lis} =
         pairs (
-               claimMessageType .= messageType
-            <> claimVersion .= ltiVersion
-            <> claimDeploymentId .= deploymentId
-            <> claimTargetLinkUri .= targetLinkUri
-            <> claimRoles .= roles
+               fromText claimMessageType .= messageType
+            <> fromText claimVersion .= ltiVersion
+            <> fromText claimDeploymentId .= deploymentId
+            <> fromText claimTargetLinkUri .= targetLinkUri
+            <> fromText claimRoles .= roles
             <> "email" .= email
             <> "name" .= displayName
             <> "given_name" .= firstName
             <> "family_name" .= lastName
-            <> claimContext .= context
-            <> claimLis .= lis
+            <> fromText claimContext .= context
+            <> fromText claimLis .= lis
           )
 
 -- | A direct implementation of <http://www.imsglobal.org/spec/security/v1p0/#authentication-response-validation Security § 5.1.3>
